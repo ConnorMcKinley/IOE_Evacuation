@@ -74,7 +74,7 @@ Plugins/*/Intermediate/*
 DerivedDataCache/*
 
 # Bypass github file size limitations
-Sources/*
+Source/*
 Content/EuropeanHornbeam/*
 Content/ForestLandscape/*
 Content/MS_ForestFloorV1/*
