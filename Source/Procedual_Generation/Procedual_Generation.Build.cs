@@ -7,6 +7,8 @@ public class Procedual_Generation : ModuleRules
 	public Procedual_Generation(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
+		MinSourceFilesForUnityBuildOverride = 1;
 	
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
