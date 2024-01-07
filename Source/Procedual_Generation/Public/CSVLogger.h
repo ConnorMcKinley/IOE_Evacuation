@@ -3,25 +3,26 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
-#include "CSVWriter.generated.h"
+#include "Components/ActorComponent.h"
+#include "CSVLogger.generated.h"
 
-/**
- * 
- */
-UCLASS(Blueprintable)
-class PROCEDUAL_GENERATION_API UCSVWriter : public UActorComponent
+
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+class PROCEDUAL_GENERATION_API UCSVLogger : public UActorComponent
 {
 	GENERATED_BODY()
-	
+
+public:	
+
 protected:
 	UFUNCTION(BlueprintCallable, Category = "CSV")
 	static void WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
-	                                          const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues);
+											  const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues);
 
 private:
 	static void AppendParticipantIndices(FString& CSVContent, const TArray<FString>& PlayerNames);
 	static void AppendSettingConfig(FString& CSVContent, const TArray<FString>& SettingLabels, TArray<FString>& SettingValues);
 	
-    static FString ConvertToCSVFormat(const TArray<FString>& StringArray);
+	static FString ConvertToCSVFormat(const TArray<FString>& StringArray);
+		
 };
