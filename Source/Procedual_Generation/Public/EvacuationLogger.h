@@ -7,7 +7,7 @@
 #include "EvacuationLogger.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCEDUAL_GENERATION_API UEvacuationLogger : public UActorComponent
 {
 	GENERATED_BODY()

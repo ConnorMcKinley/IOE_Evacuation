@@ -51,7 +51,7 @@ void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, c
 void UEvacuationLogger::AppendParticipantIndices(FString& CSVContent, const TArray<FString>& PlayerNames)
 {
 	// Create a FString in the format of "Names, Players..." to be written to the CSV file
-	CSVContent = TEXT("Names,") + ConvertToCSVFormat(PlayerNames) + TEXT("\n");
+	CSVContent += TEXT("Names,") + ConvertToCSVFormat(PlayerNames) + TEXT("\n");
 
 	// Add to the FString the player indices "(empty), 0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
 	TArray<FString> Indices;
