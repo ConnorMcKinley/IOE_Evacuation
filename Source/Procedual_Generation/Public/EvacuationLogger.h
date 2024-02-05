@@ -6,7 +6,13 @@
 #include "Components/ActorComponent.h"
 #include "EvacuationLogger.generated.h"
 
-
+UENUM(BlueprintType)
+enum EReasonForSnapshot
+{
+	Initial,
+	WaypointReached,
+	RoadblockReport
+};
 USTRUCT(BlueprintType)
 struct FRouteSnapshotT
 {
@@ -21,13 +27,16 @@ struct FRouteSnapshotT
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	TArray<int> UpdatedRoute;
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TEnumAsByte<EReasonForSnapshot> Reason;
+
 	FRouteSnapshotT()
-		: Time(0.0f), CurrentWaypoint(0)
+		: Time(0.0f), CurrentWaypoint(0), Reason(EReasonForSnapshot::Initial)
 	{
 	}
 
-	FRouteSnapshotT(float InTime, int InCurrentWaypoint, TArray<int> InUpdatedRoute)
-		: Time(InTime), CurrentWaypoint(InCurrentWaypoint), UpdatedRoute(InUpdatedRoute)
+	FRouteSnapshotT(float InTime, int InCurrentWaypoint, TArray<int> InUpdatedRoute, EReasonForSnapshot InReason)
+		: Time(InTime), CurrentWaypoint(InCurrentWaypoint), UpdatedRoute(InUpdatedRoute), Reason(InReason)
 	{
 	}
 };
@@ -53,6 +62,71 @@ struct FNavigationHistoryT
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FRoadBlockData
+{
+	GENERATED_BODY()
+
+	// The waypoints that this roadblock is in between
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int NodeA;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int NodeB;
+};
+
+UENUM(BlueprintType)
+enum EReasonForReport
+{
+	Default
+};
+USTRUCT(BlueprintType)
+struct FReportData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FString ParticipantIndex;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int RoadblockIndex;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	float TimeOpened;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	float TimeClosed;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	bool WasReportSent;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TEnumAsByte<EReasonForReport> Reason;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FString ReportMessage;
+};
+
+USTRUCT(BlueprintType)
+struct FTrustData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FString ParticipantIndex;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int CurrentWaypoint;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int Score;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	float TimeAppeared;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	float TimeSent;
+};
+
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCEDUAL_GENERATION_API UEvacuationLogger : public UActorComponent
 {
@@ -62,14 +136,24 @@ public:
 	// Sets default values for this component's properties
 	UEvacuationLogger();
 
+	// The time when the experiment started, exposed to the blueprint
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FDateTime ExperimentStartTime;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable, Category = "CSV")
-	static void WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
+	void WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
 											  const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues);
 	UFUNCTION(BlueprintCallable, Category = "CSV")
-	static void WriteNavigationHistory(const FString& FilePath, const TArray<FNavigationHistoryT>& NavigationData);
+	void WriteNavigationHistory(const FString& FilePath, const TArray<FNavigationHistoryT>& NavigationData);
+
+	UFUNCTION(BlueprintCallable, Category = "CSV")
+	void WriteReportHistory(const FString& FilePath, const TArray<FRoadBlockData>& RoadBlockData, const TArray<FReportData>& ReportData);
+
+	UFUNCTION(BlueprintCallable, Category = "CSV")
+	void WriteTrustHistory(const FString& FilePath, const TArray<FTrustData>& TrustData);
 
 public:	
 	// Called every frame
@@ -79,6 +163,6 @@ private:
 	static void AppendParticipantIndices(FString& CSVContent, const TArray<FString>& PlayerNames);
 	static void AppendSettingConfig(FString& CSVContent, const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues);
 	static FString ConvertToCSVFormat(const TArray<FString>& StringArray);
-	static void WriteFile(const FString& FilePath, const FString& CSVContent);
+	void WriteFile(const FString& FilePath, const FString& CSVContent) const;
 		
 };
