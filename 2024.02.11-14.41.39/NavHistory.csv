@@ -1,0 +1,7 @@
+ParticipantIndex,Time,Reason,CurrentWaypoint,UpdatedRoute
+,14:41:39.069,Initial,12,12 62 53 75 6 
+,14:41:58.849,Waypoint Reached,62,62 53 75 6 
+,14:42:11.863,Waypoint Reached,53,53 75 6 
+,14:42:26.885,Waypoint Reached,75,75 6 
+,14:42:39.954,Waypoint Reached,43,43 6 
+,14:42:59.992,Waypoint Reached,6,6 

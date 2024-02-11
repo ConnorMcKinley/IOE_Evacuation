@@ -52,7 +52,7 @@ class GraphGenerator:
     def can_connect(self, node_index1, node_index2):
         """Check if a new connection between two nodes is valid."""
         # Ensuring not exceeding the connection limits per node
-        if self.connections_count(node_index1) >= 4 or self.connections_count(node_index2) >= 4:
+        if self.connections_count(node_index1) >= 5 or self.connections_count(node_index2) >= 5:
             return False
         # More checks can be added here, e.g., intersecting with other connections
         return True
@@ -64,7 +64,7 @@ class GraphGenerator:
     def generate_connections(self):
         """Attempt to generate connections respecting the constraints."""
         for node_index in range(len(self.nodes)):
-            while self.connections_count(node_index) < 2:
+            while self.connections_count(node_index) < 3:
                 closest_node = self.find_closest_node(node_index)
                 if closest_node is not None and self.can_connect(node_index, closest_node):
                     self.connections.append((node_index, closest_node))
@@ -137,7 +137,7 @@ class GraphGeneratorEnhanced(GraphGenerator):
         return self.nodes, self.connections
 
 # Enhanced example usage
-enhanced_generator = GraphGeneratorEnhanced(target_node_count=120, min_x=0, max_x=50000, min_y=0, max_y=50000, min_distance_from_node=4000)
+enhanced_generator = GraphGeneratorEnhanced(target_node_count=90, min_x=0, max_x=50000, min_y=0, max_y=50000, min_distance_from_node=4000)
 nodes, connections = enhanced_generator.generate_graph()
 
 # Write the graph to JSON file using the following format:

@@ -19,7 +19,7 @@ struct FRouteSnapshotT
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	float Time;
+	FDateTime Time;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	int CurrentWaypoint;
@@ -91,10 +91,13 @@ struct FReportData
 	int RoadblockIndex;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	float TimeOpened;
+	FDateTime TimeOpened;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	float TimeClosed;
+	FDateTime TimeClosed;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FDateTime TimeSent;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	bool WasReportSent;
@@ -121,10 +124,10 @@ struct FTrustData
 	int Score;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	float TimeAppeared;
+	FDateTime TimeAppeared;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	float TimeSent;
+	FDateTime TimeSent;
 };
 
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -164,5 +167,7 @@ private:
 	static void AppendSettingConfig(FString& CSVContent, const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues);
 	static FString ConvertToCSVFormat(const TArray<FString>& StringArray);
 	void WriteFile(const FString& FilePath, const FString& CSVContent) const;
+	// Function to parse a FDateTime into a string in the format HH:MM:SS:MS
+	static FString ParseDateTimeIntoHmsms(FDateTime Time);
 		
 };

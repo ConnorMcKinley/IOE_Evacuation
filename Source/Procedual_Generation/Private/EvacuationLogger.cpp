@@ -65,7 +65,7 @@ void UEvacuationLogger::WriteNavigationHistory(const FString& FilePath, const TA
 		{
 			// Format each row
 			FString Row = NavHistory.ParticipantIndex + TEXT(",");
-			Row += FString::SanitizeFloat(Snapshot.Time) + TEXT(",");
+			Row += ParseDateTimeIntoHmsms(Snapshot.Time) + TEXT(",");
 			Row += NavReasonToString[Snapshot.Reason] + TEXT(",");
 			Row += FString::FromInt(Snapshot.CurrentWaypoint) + TEXT(",");
             
@@ -109,14 +109,15 @@ void UEvacuationLogger::WriteReportHistory(const FString& FilePath, const TArray
 
 	CSVContent += TEXT("Reports\n");
 
-	CSVContent += TEXT("Participant,Roadblock Index,Time Opened,Time Closed,Was Report Sent?,Reason,Report Message\n");
+	CSVContent += TEXT("Participant,Roadblock Index,Time Opened,Time Closed,Time Sent,Was Report Sent?,Reason,Report Message\n");
 
 	for (auto Report : ReportData)
 	{
 		FString Row = Report.ParticipantIndex + TEXT(",");
 		Row += (Report.RoadblockIndex != -1 ? FString::FromInt(Report.RoadblockIndex) : TEXT("")) + TEXT(",");
-		Row += FString::SanitizeFloat(Report.TimeOpened) + TEXT(",");
-		Row += FString::SanitizeFloat(Report.TimeClosed) + TEXT(",");
+		Row += ParseDateTimeIntoHmsms(Report.TimeOpened) + TEXT(",");
+		Row += Report.WasReportSent ? TEXT(",") : ParseDateTimeIntoHmsms(Report.TimeClosed) + TEXT(",");
+		Row += Report.WasReportSent ? ParseDateTimeIntoHmsms(Report.TimeSent) + TEXT(",") : TEXT(",");
 		Row += Report.WasReportSent ? TEXT("Yes,") : TEXT("No,");
 		Row += ReportReasonToString[Report.Reason] + TEXT(",");
 		Row += Report.ReportMessage;
@@ -140,8 +141,8 @@ void UEvacuationLogger::WriteTrustHistory(const FString& FilePath, const TArray<
 		FString Row = Trust.ParticipantIndex + TEXT(",");
 		Row += FString::FromInt(Trust.CurrentWaypoint) + TEXT(",");
 		Row += FString::FromInt(Trust.Score) + TEXT(",");
-		Row += FString::SanitizeFloat(Trust.TimeAppeared) + TEXT(",");
-		Row += FString::SanitizeFloat(Trust.TimeSent);
+		Row += ParseDateTimeIntoHmsms(Trust.TimeAppeared) + TEXT(",");
+		Row += ParseDateTimeIntoHmsms(Trust.TimeSent);
 
 		CSVContent += Row + TEXT("\n");
 	}
@@ -188,3 +189,7 @@ void UEvacuationLogger::WriteFile(const FString& FilePath, const FString& CSVCon
 	FFileHelper::SaveStringToFile(CSVContent, *AbsoluteFilePath, FFileHelper::EEncodingOptions::AutoDetect, &IFileManager::Get(), FILEWRITE_Append);
 }
 
+FString UEvacuationLogger::ParseDateTimeIntoHmsms(FDateTime Time)
+{
+	return FString::Printf(TEXT("%02d:%02d:%02d.%03d"), Time.GetHour(), Time.GetMinute(), Time.GetSecond(), Time.GetMillisecond());
+}
