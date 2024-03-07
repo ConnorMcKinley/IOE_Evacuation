@@ -50,7 +50,8 @@ void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, c
 TMap<int, FString> NavReasonToString = {
 	{0, "Initial"},
 	{1, "Waypoint Reached"},
-	{2, "Roadblock Report"}
+	{2, "Roadblock Report"},
+	{3, "Finished"}
 };
 void UEvacuationLogger::WriteNavigationHistory(const FString& FilePath, const TArray<FNavigationHistoryT>& NavigationData)
 {
@@ -116,7 +117,7 @@ void UEvacuationLogger::WriteReportHistory(const FString& FilePath, const TArray
 		FString Row = Report.ParticipantIndex + TEXT(",");
 		Row += (Report.RoadblockIndex != -1 ? FString::FromInt(Report.RoadblockIndex) : TEXT("")) + TEXT(",");
 		Row += ParseDateTimeIntoHmsms(Report.TimeOpened) + TEXT(",");
-		Row += Report.WasReportSent ? TEXT(",") : ParseDateTimeIntoHmsms(Report.TimeClosed) + TEXT(",");
+		Row += ParseDateTimeIntoHmsms(Report.TimeClosed) + TEXT(",");
 		Row += Report.WasReportSent ? ParseDateTimeIntoHmsms(Report.TimeSent) + TEXT(",") : TEXT(",");
 		Row += Report.WasReportSent ? TEXT("Yes,") : TEXT("No,");
 		Row += ReportReasonToString[Report.Reason] + TEXT(",");

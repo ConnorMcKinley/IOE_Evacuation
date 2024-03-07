@@ -30,6 +30,22 @@ struct FGraphConnection {
 		: NodeIndex1(InNodeIndex1), NodeIndex2(InNodeIndex2) {}
 };
 
+USTRUCT(BlueprintType)
+struct FStartEndPosition
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Map Importer")
+	int32 Start;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Map Importer")
+	int32 End;
+
+	FStartEndPosition() : Start(0), End(0) {}
+	FStartEndPosition(int32 InStart, int32 InEnd) : Start(InStart), End(InEnd) {}
+};
+
 UCLASS(BlueprintType)
 // Class to handle reading and storing the graph data
 class PROCEDUAL_GENERATION_API UMapImporter : public UObject
@@ -41,4 +57,10 @@ public:
 	// @param FilePath: The path to the file to be read
 	UFUNCTION(BlueprintCallable)
 	static bool ReadGraphFromFile(const FString& FilePath, TArray<FGraphNode>& OutNodes, TArray<FGraphConnection>& OutConnections);
+
+	UFUNCTION(BlueprintCallable)
+	static bool ReadStartEndPositionsFromFile(const FString& FilePath, TArray<FStartEndPosition>& OutStartEndPositions);
+
+	UFUNCTION(BlueprintCallable)
+	static bool ReadRoadblockPositionsFromFile(const FString& FilePath, TArray<int32>& OutRoadblockPositions);
 };

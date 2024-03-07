@@ -2,13 +2,15 @@ import random
 import math
 
 class GraphGenerator:
-    def __init__(self, target_node_count, min_x, max_x, min_y, max_y, min_distance_from_node):
+    def __init__(self, target_node_count, min_x, max_x, min_y, max_y, min_distance_from_node, grid_interval=None, max_connection_length=None):
         self.target_node_count = target_node_count
         self.min_x = min_x
         self.max_x = max_x
         self.min_y = min_y
         self.max_y = max_y
         self.min_distance = min_distance_from_node
+        self.grid_interval = grid_interval  # Grid interval for structured node placement
+        self.max_connection_length = max_connection_length  # Maximum length for connections
         self.nodes = []  # Each node is a tuple (x, y)
         self.connections = []  # Each connection is a tuple (node_index1, node_index2)
 
@@ -24,14 +26,31 @@ class GraphGenerator:
         return True
 
     def generate_nodes(self):
-        """Generate nodes within the specified bounds ensuring they respect the minimum distance."""
-        while len(self.nodes) < self.target_node_count:
-            x = random.uniform(self.min_x, self.max_x)
-            y = random.uniform(self.min_y, self.max_y)
-            new_node = (x, y)
-            print(len(self.nodes))
-            if self.is_valid_node(new_node):
-                self.nodes.append(new_node)
+        # Adjusted logic to ensure target node count is met
+        if self.grid_interval is None:
+            while len(self.nodes) < self.target_node_count:
+                x = random.uniform(self.min_x, self.max_x)
+                y = random.uniform(self.min_y, self.max_y)
+                if self.is_valid_node((x, y)):
+                    self.nodes.append((x, y))
+        else:
+            grid_points = [(x, y) for x in range(self.min_x, self.max_x+1, self.grid_interval) for y in range(self.min_y, self.max_y+1, self.grid_interval)]
+            random.shuffle(grid_points)  # Shuffle grid points to maintain randomness
+            for point in grid_points:
+                if len(self.nodes) >= self.target_node_count:
+                    break
+                if self.is_valid_node(point):
+                    self.nodes.append(point)
+
+            # If target not met due to strict grid interval and min_distance, reduce constraints
+            if len(self.nodes) < self.target_node_count:
+                additional_attempts = 0
+                while len(self.nodes) < self.target_node_count and additional_attempts < 10000:
+                    x = random.uniform(self.min_x, self.max_x)
+                    y = random.uniform(self.min_y, self.max_y)
+                    if self.is_valid_node((x, y)):
+                        self.nodes.append((x, y))
+                    additional_attempts += 1
 
     def find_closest_node(self, node_index):
         """Find the closest node to the specified node that is not already directly connected."""
@@ -54,6 +73,11 @@ class GraphGenerator:
         # Ensuring not exceeding the connection limits per node
         if self.connections_count(node_index1) >= 5 or self.connections_count(node_index2) >= 5:
             return False
+
+        if self.max_connection_length is not None and self.distance(self.nodes[node_index1], self.nodes[
+            node_index2]) > self.max_connection_length:
+            return False
+
         # More checks can be added here, e.g., intersecting with other connections
         return True
 
@@ -137,8 +161,10 @@ class GraphGeneratorEnhanced(GraphGenerator):
         return self.nodes, self.connections
 
 # Enhanced example usage
-enhanced_generator = GraphGeneratorEnhanced(target_node_count=90, min_x=0, max_x=50000, min_y=0, max_y=50000, min_distance_from_node=4000)
+enhanced_generator = GraphGeneratorEnhanced(target_node_count=60, min_x=0, max_x=35000, min_y=0, max_y=35000, min_distance_from_node=3000, max_connection_length=10000, grid_interval=4000)
 nodes, connections = enhanced_generator.generate_graph()
+
+print("Generated number of nodes:", len(nodes))
 
 # Write the graph to JSON file using the following format:
 # {

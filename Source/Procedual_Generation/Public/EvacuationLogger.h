@@ -11,7 +11,8 @@ enum EReasonForSnapshot
 {
 	Initial,
 	WaypointReached,
-	RoadblockReport
+	RoadblockReport,
+	Finished
 };
 USTRUCT(BlueprintType)
 struct FRouteSnapshotT

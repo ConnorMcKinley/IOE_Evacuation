@@ -1,9 +1,0 @@
-ParticipantIndex,Time,Reason,CurrentWaypoint,UpdatedRoute
-Connor,13:49:38.700,Initial,12,12 62 53 75 6 
-Connor,13:49:54.107,Roadblock Report,12,12 47 62 53 75 6 
-Connor,13:50:06.435,Waypoint Reached,47,47 62 53 75 6 
-Connor,13:50:24.596,Waypoint Reached,62,62 53 75 6 
-Tester,13:49:39.292,Initial,11,11 1 4 33 19 
-Tester,13:50:45.257,Roadblock Report,11,11 49 1 4 33 19 
-Tester,13:51:00.869,Waypoint Reached,49,49 1 4 33 19 
-Tester,13:51:11.957,Waypoint Reached,63,63 49 1 4 33 19 
