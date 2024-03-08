@@ -135,13 +135,14 @@ void UEvacuationLogger::WriteTrustHistory(const FString& FilePath, const TArray<
 	FString CSVContent;
 
 	// Header
-	CSVContent += TEXT("Participant,Current Waypoint,Score,Time Appeared,Time Sent\n");
+	CSVContent += TEXT("Participant,Current Waypoint,Guide Score,Other Player Score,Time Appeared,Time Sent\n");
 
 	for (auto Trust : TrustData)
 	{
 		FString Row = Trust.ParticipantIndex + TEXT(",");
 		Row += FString::FromInt(Trust.CurrentWaypoint) + TEXT(",");
-		Row += FString::FromInt(Trust.Score) + TEXT(",");
+		Row += FString::FromInt(Trust.ScoreGuide) + TEXT(",");
+		Row += FString::FromInt(Trust.ScoreOtherPlayer) + TEXT(",");
 		Row += ParseDateTimeIntoHmsms(Trust.TimeAppeared) + TEXT(",");
 		Row += ParseDateTimeIntoHmsms(Trust.TimeSent);
 

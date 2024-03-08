@@ -122,7 +122,10 @@ struct FTrustData
 	int CurrentWaypoint;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int Score;
+	int ScoreGuide;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int ScoreOtherPlayer;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	FDateTime TimeAppeared;
