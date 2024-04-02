@@ -152,6 +152,26 @@ void UEvacuationLogger::WriteTrustHistory(const FString& FilePath, const TArray<
 	WriteFile(FilePath, CSVContent);
 }
 
+void UEvacuationLogger::WritePositionHistory(const FString& FilePath, const TArray<FPositionData>& PositionData)
+{
+	FString CSVContent;
+
+	// Header
+	CSVContent += TEXT("Participant,Time,Position X,Position Y\n");
+
+	for (auto PositionDatum : PositionData)
+	{
+		FString Row = PositionDatum.ParticipantIndex + TEXT(",");
+		Row += ParseDateTimeIntoHmsms(PositionDatum.Time) + TEXT(",");
+		Row += FString::FromInt(PositionDatum.Position.X) + TEXT(",");
+		Row += FString::FromInt(PositionDatum.Position.Y);
+
+		CSVContent += Row + TEXT("\n");
+	}
+
+	WriteFile(FilePath, CSVContent);
+}
+
 
 void UEvacuationLogger::AppendParticipantIndices(FString& CSVContent, const TArray<FString>& PlayerNames)
 {

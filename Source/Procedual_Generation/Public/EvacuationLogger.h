@@ -133,6 +133,20 @@ struct FTrustData
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	FDateTime TimeSent;
 };
+USTRUCT(BlueprintType)
+struct FPositionData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FString ParticipantIndex;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FDateTime Time;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	FVector Position;
+};
 
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCEDUAL_GENERATION_API UEvacuationLogger : public UActorComponent
@@ -161,6 +175,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "CSV")
 	void WriteTrustHistory(const FString& FilePath, const TArray<FTrustData>& TrustData);
+
+	UFUNCTION(BlueprintCallable, Category = "CSV")
+	void WritePositionHistory(const FString& FilePath, const TArray<FPositionData>& PositionData);
 
 public:	
 	// Called every frame
