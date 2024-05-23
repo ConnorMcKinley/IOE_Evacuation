@@ -32,7 +32,8 @@ void UEvacuationLogger::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 	// ...
 }
 void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
-	const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues)
+                                                      const TArray<FString>& GameSettingLabels, const TArray<FString>& GameSettingValues, const TArray<FString>&
+                                                      ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues)
 {
 	// Create a FString to be written to the CSV file
 	FString CSVContent;
@@ -42,8 +43,20 @@ void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, c
 	// Extra line to separate the two sections
 	CSVContent += TEXT("\n");
 
-	// Add the setting configuration to the CSV file
-	AppendSettingConfig(CSVContent, SettingLabels, SettingValues);
+	// Add game configuration title
+	CSVContent += TEXT("Game Configuration\n");
+
+	// Add the game configuration to the CSV file
+	AppendSettingConfig(CSVContent, GameSettingLabels, GameSettingValues);
+
+	// Extra line to separate the two sections
+	CSVContent += TEXT("\n");
+
+	// Add experimenter configuration title
+	CSVContent += TEXT("Experimenter Configuration\n");
+
+	// Add the experimenter configuration to the CSV file
+	AppendSettingConfig(CSVContent, ExperimenterSettingLabels, ExperimenterSettingValues);
 
 	WriteFile(FilePath, CSVContent);
 }
@@ -170,6 +183,52 @@ void UEvacuationLogger::WritePositionHistory(const FString& FilePath, const TArr
 		CSVContent += Row + TEXT("\n");
 	}
 
+	WriteFile(FilePath, CSVContent);
+}
+
+void UEvacuationLogger::WriteDecisionHistory(const FString& FilePath, const TArray<FString>& DecisionLabels,
+                                             const FDecisionData& DecisionData)
+{
+	FString CSVContent;
+
+	// Create header row
+	for (const FString& Label : DecisionLabels)
+	{
+		CSVContent += Label;
+		CSVContent += TEXT(",");
+	}
+	// Remove the trailing comma and add a new line
+	CSVContent.RemoveAt(CSVContent.Len() - 1);
+	CSVContent += TEXT("\n");
+
+	// Determine the number of rows to write based on the length of the arrays (assumed to be equal length)
+	int32 NumRows = DecisionData.IsNextNode.Num();
+
+	// Add rows of data
+	for (int32 i = 0; i < NumRows; ++i)
+	{
+		CSVContent += (DecisionData.IsNextNode.IsValidIndex(i) ? (DecisionData.IsNextNode[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+		CSVContent += TEXT(",");
+
+		CSVContent += (DecisionData.IsReportCorrectIfNextAndRoadblock.IsValidIndex(i) ? (DecisionData.IsReportCorrectIfNextAndRoadblock[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+		CSVContent += TEXT(",");
+
+		CSVContent += (DecisionData.IsReportCorrectIfAdjacentAndRoadblock.IsValidIndex(i) ? (DecisionData.IsReportCorrectIfAdjacentAndRoadblock[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+		CSVContent += TEXT(",");
+
+		CSVContent += (DecisionData.IsReportWrongIfNextAndNoRoadblock.IsValidIndex(i) ? (DecisionData.IsReportWrongIfNextAndNoRoadblock[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+		CSVContent += TEXT(",");
+
+		CSVContent += (DecisionData.IsReportWrongIfAdjacentAndNoRoadblock.IsValidIndex(i) ? (DecisionData.IsReportWrongIfAdjacentAndNoRoadblock[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+		CSVContent += TEXT(",");
+
+		CSVContent += (DecisionData.IsRandomReportCorrect.IsValidIndex(i) ? (DecisionData.IsRandomReportCorrect[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+
+		// Add a new line at the end of each row
+		CSVContent += TEXT("\n");
+	}
+
+	// Write the content to the file
 	WriteFile(FilePath, CSVContent);
 }
 

@@ -151,6 +151,51 @@ struct FPositionData
 	FVector Position;
 };
 
+USTRUCT(BlueprintType)
+struct FDecisionData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TArray<bool> IsNextNode;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TArray<bool> IsReportCorrectIfNextAndRoadblock;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TArray<bool> IsReportCorrectIfAdjacentAndRoadblock;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TArray<bool> IsReportWrongIfNextAndNoRoadblock;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TArray<bool> IsReportWrongIfAdjacentAndNoRoadblock;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TArray<bool> IsRandomReportCorrect;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TMap<FString, int> PlayersNextNodeIndices;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TMap<FString, int> IsReportCorrectIfNextAndRoadblockPlayerIndices;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TMap<FString, int> IsReportCorrectIfAdjacentAndRoadblockPlayerIndices;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TMap<FString, int> IsReportWrongIfNextAndNoRoadblockPlayerIndices;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TMap<FString, int> IsReportWrongIfAdjacentAndNoRoadblockPlayerIndices;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int IsRandomReportCorrectPlayerIndex;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TMap<FString, int> PlayersLastWaypointID;
+};
+
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class PROCEDUAL_GENERATION_API UEvacuationLogger : public UActorComponent
 {
@@ -169,7 +214,8 @@ protected:
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable, Category = "CSV")
 	void WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
-											  const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues);
+	                                   const TArray<FString>& GameSettingLabels, const TArray<FString>& GameSettingValues, const TArray<FString>&
+	                                   ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues);
 	UFUNCTION(BlueprintCallable, Category = "CSV")
 	void WriteNavigationHistory(const FString& FilePath, const TArray<FNavigationHistoryT>& NavigationData);
 
@@ -181,6 +227,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable, Category = "CSV")
 	void WritePositionHistory(const FString& FilePath, const TArray<FPositionData>& PositionData);
+
+	UFUNCTION(BlueprintCallable, Category = "CSV")
+	void WriteDecisionHistory(const FString& FilePath, const TArray<FString>& DecisionLabels, const FDecisionData& DecisionData);
 
 public:	
 	// Called every frame
