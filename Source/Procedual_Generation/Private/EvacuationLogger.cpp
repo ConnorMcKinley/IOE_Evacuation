@@ -101,6 +101,8 @@ void UEvacuationLogger::WriteNavigationHistory(const FString& FilePath, const TA
 }
 TMap<int, FString> ReportReasonToString = {
 	{0, "Default"},
+	{1, "Experimenter_ReachedWaypoint"},
+	{2, "Experimenter_Random"}
 };
 void UEvacuationLogger::WriteReportHistory(const FString& FilePath, const TArray<FRoadBlockData>& RoadBlockData,
 	const TArray<FReportData>& ReportData)
@@ -222,7 +224,11 @@ void UEvacuationLogger::WriteDecisionHistory(const FString& FilePath, const TArr
 		CSVContent += (DecisionData.IsReportWrongIfAdjacentAndNoRoadblock.IsValidIndex(i) ? (DecisionData.IsReportWrongIfAdjacentAndNoRoadblock[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
 		CSVContent += TEXT(",");
 
+		CSVContent += (DecisionData.RandomTimeSequence.IsValidIndex(i) ? FString::Printf(TEXT("%f"), DecisionData.RandomTimeSequence[i]) : TEXT(""));
+		CSVContent += TEXT(",");
+		
 		CSVContent += (DecisionData.IsRandomReportCorrect.IsValidIndex(i) ? (DecisionData.IsRandomReportCorrect[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+
 
 		// Add a new line at the end of each row
 		CSVContent += TEXT("\n");

@@ -78,7 +78,9 @@ struct FRoadBlockData
 UENUM(BlueprintType)
 enum EReasonForReport
 {
-	Default
+	Default,
+	ExperimenterReachedWaypoint,
+	ExperimenterRandom
 };
 USTRUCT(BlueprintType)
 struct FReportData
@@ -194,6 +196,12 @@ struct FDecisionData
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	TMap<FString, int> PlayersLastWaypointID;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	TArray<float> RandomTimeSequence;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
+	int RandomTimeSequenceIndex;
 };
 
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
