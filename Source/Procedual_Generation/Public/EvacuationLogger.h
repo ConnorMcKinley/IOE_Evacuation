@@ -14,6 +14,7 @@ enum EReasonForSnapshot
 	RoadblockReport,
 	Finished
 };
+
 USTRUCT(BlueprintType)
 struct FRouteSnapshotT
 {
@@ -32,12 +33,12 @@ struct FRouteSnapshotT
 	TEnumAsByte<EReasonForSnapshot> Reason;
 
 	FRouteSnapshotT()
-		: Time(0.0f), CurrentWaypoint(0), Reason(EReasonForSnapshot::Initial)
+		: Time(FDateTime::Now()), CurrentWaypoint(0), Reason(EReasonForSnapshot::Initial)
 	{
 	}
 
 	FRouteSnapshotT(float InTime, int InCurrentWaypoint, TArray<int> InUpdatedRoute, EReasonForSnapshot InReason)
-		: Time(InTime), CurrentWaypoint(InCurrentWaypoint), UpdatedRoute(InUpdatedRoute), Reason(InReason)
+		: Time(FDateTime::Now()), CurrentWaypoint(InCurrentWaypoint), UpdatedRoute(InUpdatedRoute), Reason(InReason)
 	{
 	}
 };
@@ -68,11 +69,11 @@ struct FRoadBlockData
 {
 	GENERATED_BODY()
 
-	// The waypoints that this roadblock is in between
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int NodeA;
+	int NodeA = -1;
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int NodeB;
+	int NodeB = -1;
 };
 
 UENUM(BlueprintType)
@@ -82,6 +83,7 @@ enum EReasonForReport
 	ExperimenterReachedWaypoint,
 	ExperimenterRandom
 };
+
 USTRUCT(BlueprintType)
 struct FReportData
 {
@@ -91,7 +93,7 @@ struct FReportData
 	FString ParticipantIndex;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int RoadblockIndex;
+	int RoadblockIndex = -1;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	FDateTime TimeOpened;
@@ -103,7 +105,7 @@ struct FReportData
 	FDateTime TimeSent;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	bool WasReportSent;
+	bool WasReportSent = false;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	TEnumAsByte<EReasonForReport> Reason;
@@ -121,16 +123,16 @@ struct FTrustData
 	FString ParticipantIndex;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int CurrentWaypoint;
+	int CurrentWaypoint = -1;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int ScoreGuide;
+	int ScoreGuide = 0;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int ScoreOtherPlayer;
+	int ScoreOtherPlayer = 0;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int ScoreOverall;
+	int ScoreOverall = 0;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	FDateTime TimeAppeared;
@@ -138,6 +140,7 @@ struct FTrustData
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	FDateTime TimeSent;
 };
+
 USTRUCT(BlueprintType)
 struct FPositionData
 {
@@ -150,7 +153,7 @@ struct FPositionData
 	FDateTime Time;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	FVector Position;
+	FVector Position = FVector::ZeroVector;
 };
 
 USTRUCT(BlueprintType)
@@ -163,7 +166,7 @@ struct FDecisionData
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	TArray<bool> IsReportCorrectIfNextAndRoadblock;
-	
+
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	TArray<bool> IsReportCorrectIfAdjacentAndRoadblock;
 
@@ -192,7 +195,7 @@ struct FDecisionData
 	TMap<FString, int> IsReportWrongIfAdjacentAndNoRoadblockPlayerIndices;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int IsRandomReportCorrectPlayerIndex;
+	int IsRandomReportCorrectPlayerIndex = -1;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	TMap<FString, int> PlayersLastWaypointID;
@@ -201,7 +204,7 @@ struct FDecisionData
 	TArray<float> RandomTimeSequence;
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int RandomTimeSequenceIndex;
+	int RandomTimeSequenceIndex = -1;
 };
 
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
