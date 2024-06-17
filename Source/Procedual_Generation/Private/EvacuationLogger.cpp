@@ -226,8 +226,12 @@ void UEvacuationLogger::WriteDecisionHistory(const FString& FilePath, const TArr
 
 		CSVContent += (DecisionData.RandomTimeSequence.IsValidIndex(i) ? FString::Printf(TEXT("%f"), DecisionData.RandomTimeSequence[i]) : TEXT(""));
 		CSVContent += TEXT(",");
-		
+
 		CSVContent += (DecisionData.IsRandomReportCorrect.IsValidIndex(i) ? (DecisionData.IsRandomReportCorrect[i] ? TEXT("true") : TEXT("false")) : TEXT(""));
+		CSVContent += TEXT(",");
+		
+		CSVContent += (DecisionData.RandomTimeLag.IsValidIndex(i) ? FString::Printf(TEXT("%f"), DecisionData.RandomTimeLag[i]) : TEXT(""));
+
 
 
 		// Add a new line at the end of each row

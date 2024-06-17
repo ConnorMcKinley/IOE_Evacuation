@@ -76,3 +76,7 @@ DerivedDataCache/*
 .vsconfig
 # Bypass github file size limitations
 
+# Ignore all folder with timestamps
+202*/**
+
+# Ignore External Actors
