@@ -211,9 +211,6 @@ struct FDecisionData
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Evacuation Data")
 	TArray<float> RandomTimeLag;
-
-	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	int RandomTimeLagIndex = -1;
 };
 
 UCLASS(Blueprintable, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
