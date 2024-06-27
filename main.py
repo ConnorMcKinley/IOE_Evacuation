@@ -162,7 +162,8 @@ class GraphGeneratorEnhanced(GraphGenerator):
 
 # Enhanced example usage
 # enhanced_generator = GraphGeneratorEnhanced(target_node_count=60, min_x=0, max_x=35000, min_y=0, max_y=35000, min_distance_from_node=3000, max_connection_length=10000, grid_interval=4000)
-enhanced_generator = GraphGeneratorEnhanced(target_node_count=10, min_x=0, max_x=5000, min_y=0, max_y=5000, min_distance_from_node=2000, max_connection_length=10000, grid_interval=4000)
+# enhanced_generator = GraphGeneratorEnhanced(target_node_count=10, min_x=0, max_x=5000, min_y=0, max_y=5000, min_distance_from_node=2000, max_connection_length=10000, grid_interval=4000)
+enhanced_generator = GraphGeneratorEnhanced(target_node_count=200, min_x=0, max_x=73000, min_y=0, max_y=73000, min_distance_from_node=3000, max_connection_length=10000, grid_interval=4000)
 nodes, connections = enhanced_generator.generate_graph()
 
 print("Generated number of nodes:", len(nodes))
