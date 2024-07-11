@@ -135,7 +135,7 @@ void UEvacuationLogger::WriteReportHistory(const FString& FilePath, const TArray
 		Row += (Report.RoadblockIndex != -1 ? FString::FromInt(Report.RoadblockIndex) : TEXT("")) + TEXT(",");
 		Row += ParseDateTimeIntoHmsms(Report.TimeOpened) + TEXT(",");
 		Row += ParseDateTimeIntoHmsms(Report.TimeClosed) + TEXT(",");
-		Row += Report.WasReportSent ? ParseDateTimeIntoHmsms(Report.TimeSent) + TEXT(",") : TEXT(",");
+		Row += !Report.WasReportSent && (Report.Reason == EReasonForReport::Default) ? TEXT(",") : ParseDateTimeIntoHmsms(Report.TimeSent) + TEXT(",");
 		Row += Report.WasReportSent ? TEXT("Yes,") : TEXT("No,");
 		Row += ReportReasonToString[Report.Reason] + TEXT(",");
 		Row += Report.ReportMessage;
