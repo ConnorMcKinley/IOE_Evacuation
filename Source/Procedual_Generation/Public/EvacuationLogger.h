@@ -81,7 +81,9 @@ enum EReasonForReport
 {
 	Default,
 	ExperimenterReachedWaypoint,
-	ExperimenterRandom
+	ExperimenterRandom,
+	InvalidRoute,
+	AlreadySubmitted
 };
 
 USTRUCT(BlueprintType)

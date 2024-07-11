@@ -102,7 +102,9 @@ void UEvacuationLogger::WriteNavigationHistory(const FString& FilePath, const TA
 TMap<int, FString> ReportReasonToString = {
 	{0, "Default"},
 	{1, "Experimenter_ReachedWaypoint"},
-	{2, "Experimenter_Random"}
+	{2, "Experimenter_Random"},
+	{3, "Invalid_Route"},
+	{4, "Already_Reported"}
 };
 void UEvacuationLogger::WriteReportHistory(const FString& FilePath, const TArray<FRoadBlockData>& RoadBlockData,
 	const TArray<FReportData>& ReportData)
