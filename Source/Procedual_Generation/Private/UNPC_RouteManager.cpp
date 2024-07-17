@@ -73,6 +73,7 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
             // Mark node as NPC spawn point in map
             if (SpawnNPCMap.Contains(Node))
             {
+                UE_LOG(LogTemp, Log, TEXT("Node: %d is NPC Activatable"), Node);
                 SpawnNPCMap[Node] = true;
             }
             else {
