@@ -68,7 +68,48 @@ class GraphGenerator:
         """Check if two nodes are directly connected."""
         return any(c for c in self.connections if (node_index1 in c and node_index2 in c))
 
+
     def can_connect(self, node_index1, node_index2):
+
+        def segments_intersect(p1, q1, p2, q2):
+            """ Return True if line segments p1q1 and p2q2 intersect. """
+# checks orientation and connectivity
+            def orientation(p, q, r):
+                val = (q[1] - p[1]) * (r[0] - q[0]) - (q[0] - p[0]) * (r[1] - q[1])
+                if val == 0:
+                    return 0
+                elif val > 0:
+                    return 1
+                else:
+                    return 2
+
+            def on_segment(p, q, r):
+                if min(p[0], q[0]) <= r[0] <= max(p[0], q[0]) and min(p[1], q[1]) <= r[1] <= max(p[1], q[1]):
+                    return True
+                return False
+
+            o1 = orientation(p1, q1, p2)
+            o2 = orientation(p1, q1, q2)
+            o3 = orientation(p2, q2, p1)
+            o4 = orientation(p2, q2, q1)
+
+            if o1 != o2 and o3 != o4:
+                return True
+
+            if o1 == 0 and on_segment(p1, q1, p2):
+                return True
+
+            if o2 == 0 and on_segment(p1, q1, q2):
+                return True
+
+            if o3 == 0 and on_segment(p2, q2, p1):
+                return True
+
+            if o4 == 0 and on_segment(p2, q2, q1):
+                return True
+
+            return False
+
         """Check if a new connection between two nodes is valid."""
         # Ensuring not exceeding the connection limits per node
         if self.connections_count(node_index1) >= 5 or self.connections_count(node_index2) >= 5:
@@ -77,6 +118,18 @@ class GraphGenerator:
         if self.max_connection_length is not None and self.distance(self.nodes[node_index1], self.nodes[
             node_index2]) > self.max_connection_length:
             return False
+
+        new_connection = (self.nodes[node_index1], self.nodes[node_index2])
+        for i in range(len(self.connections)):
+            index1, index2 = self.connections[i]
+            existing_connection = (self.nodes[index1], self.nodes[index2])
+
+            # Ignore connections that share a node with the new connection
+
+            if node_index1 not in (index1, index2) and node_index2 not in (index1, index2):
+                if segments_intersect(new_connection[0], new_connection[1], existing_connection[0],
+                                      existing_connection[1]):
+                    return False  # Intersection found, don't allow this connection
 
         # More checks can be added here, e.g., intersecting with other connections
         return True
@@ -163,7 +216,7 @@ class GraphGeneratorEnhanced(GraphGenerator):
 # Enhanced example usage
 # enhanced_generator = GraphGeneratorEnhanced(target_node_count=60, min_x=0, max_x=35000, min_y=0, max_y=35000, min_distance_from_node=3000, max_connection_length=10000, grid_interval=4000)
 # enhanced_generator = GraphGeneratorEnhanced(target_node_count=10, min_x=0, max_x=5000, min_y=0, max_y=5000, min_distance_from_node=2000, max_connection_length=10000, grid_interval=4000)
-enhanced_generator = GraphGeneratorEnhanced(target_node_count=200, min_x=0, max_x=73000, min_y=0, max_y=73000, min_distance_from_node=3000, max_connection_length=10000, grid_interval=4000)
+enhanced_generator = GraphGeneratorEnhanced(target_node_count=200, min_x=0, max_x=77000, min_y=0, max_y=77000, min_distance_from_node=3000, max_connection_length=10000, grid_interval=4000)
 nodes, connections = enhanced_generator.generate_graph()
 
 print("Generated number of nodes:", len(nodes))
