@@ -32,15 +32,15 @@ public:
     static bool IsValidJsonFile(const UObject* WorldContextObject, FString& Err);
 
     UFUNCTION(BlueprintCallable, Category = "NPC File System", meta = (WorldContext = "WorldContextObject"))
-    static bool ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 num_nodes);
+    static bool ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 num_routes, int32 DefaultNPCValue);
 
     UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
-    static bool GetNodeSpawnValue(int32 node_id);
+    static int32 GetRouteNumNPCs(int32 route_id);
 
     UFUNCTION(BlueprintCallable, Category = "NPC Route Management")
     static void ResetStaticMaps();
 private:
     // Using a static map to hold route states; static to make it common across all instances.
     static TMap<int32, bool> RouteIDMap;
-    static TMap<int32, bool> SpawnNPCMap;
+    static TMap<int32, int32> NumberOfNPCsAtRouteMap;
 };

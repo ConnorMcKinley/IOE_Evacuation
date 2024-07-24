@@ -1,7 +1,7 @@
 #include "UNPC_RouteManager.h"
 
 TMap<int32, bool> UNPC_RouteManager::RouteIDMap;
-TMap<int32, bool> UNPC_RouteManager::SpawnNPCMap;
+TMap<int32, int32> UNPC_RouteManager::NumberOfNPCsAtRouteMap;
 
 UNPC_RouteManager::UNPC_RouteManager()
 {
@@ -40,12 +40,12 @@ bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FStri
     return false;
 }
 
-bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 num_nodes)
+bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 num_routes, int32 DefaultNPCValue)
 {
-    // initialize SpawnNPCMap
-    for (int32 i = 0; i < num_nodes; i++) {
-        SpawnNPCMap.Add(i, false);
+    for (int32 i = 0; i < num_routes; i++) {
+        NumberOfNPCsAtRouteMap.Add(i, 0);
     }
+
     FString FilePath = FPaths::ProjectDir() / TEXT("NPC.json");
     FString JsonString;
     if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
@@ -54,6 +54,7 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
         return false;
     }
 
+    // Parse .json file
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
     TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 
@@ -62,22 +63,29 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
         UE_LOG(LogTemp, Error, TEXT("Failed to parse JSON file: %s"), *FilePath);
         return false;
     }
-    // Read nodes array from JSON
-    const TArray<TSharedPtr<FJsonValue>>* NodesArray;
-    if (JsonObject->TryGetArrayField("nodes", NodesArray))
+    // Read object from JSON
+    const TSharedPtr<FJsonObject>* RoutesObject;
+    if (JsonObject->TryGetObjectField(TEXT("routes"), RoutesObject))
     {
-        // Iterate over each node in the array
-        for (int32 Index = 0; Index < NodesArray->Num(); Index++)
+        // Iterate over each route in the object
+        for (auto& RoutePair : (*RoutesObject)->Values)
         {
-            int32 Node = (*NodesArray)[Index]->AsNumber();
-            // Mark node as NPC spawn point in map
-            if (SpawnNPCMap.Contains(Node))
+            int32 RouteID = FCString::Atoi(*RoutePair.Key);
+            int32 NPCCount = DefaultNPCValue;
+
+            // Check if the route has a specific NPC count
+            if (RoutePair.Value.IsValid() && RoutePair.Value->Type == EJson::Number)
             {
-                UE_LOG(LogTemp, Log, TEXT("Node: %d is NPC Activatable"), Node);
-                SpawnNPCMap[Node] = true;
+                NPCCount = RoutePair.Value->AsNumber();
+            }
+
+            // Update the SpawnNPCMap with the NPC count for the route
+            if (int32* MapValue = NumberOfNPCsAtRouteMap.Find(RouteID)) {
+                *MapValue = NPCCount;
+                UE_LOG(LogTemp, Log, TEXT("Route: %d has %d NPCs"), RouteID, NPCCount);
             }
             else {
-                UE_LOG(LogTemp, Error, TEXT("Invalid node within array in JSON file: %s"), *FilePath);
+                UE_LOG(LogTemp, Error, TEXT("Invalid route ID in JSON file: %s"), *FilePath);
                 return false;
             }
         }
@@ -91,9 +99,9 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
     return true;
 }
 
-bool UNPC_RouteManager::GetNodeSpawnValue(int32 node_id)
+int32 UNPC_RouteManager::GetRouteNumNPCs(int32 route_id)
 {
-    return SpawnNPCMap.Contains(node_id) && SpawnNPCMap[node_id];
+    return NumberOfNPCsAtRouteMap.Contains(route_id) ? NumberOfNPCsAtRouteMap[route_id] : -1 ;
 }
 
 void UNPC_RouteManager::ResetStaticMaps()

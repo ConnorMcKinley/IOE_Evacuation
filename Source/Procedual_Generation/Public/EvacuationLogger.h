@@ -234,7 +234,7 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "CSV")
 	void WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
 	                                   const TArray<FString>& GameSettingLabels, const TArray<FString>& GameSettingValues, const TArray<FString>&
-	                                   ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues);
+	                                   ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues, const TArray<FString>& NPCSettingLabels, const TArray<FString>& NPCSettingValues);
 	UFUNCTION(BlueprintCallable, Category = "CSV")
 	void WriteNavigationHistory(const FString& FilePath, const TArray<FNavigationHistoryT>& NavigationData);
 
