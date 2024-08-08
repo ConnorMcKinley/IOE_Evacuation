@@ -33,7 +33,7 @@ void UEvacuationLogger::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 }
 void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
                                                       const TArray<FString>& GameSettingLabels, const TArray<FString>& GameSettingValues, const TArray<FString>&
-                                                      ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues)
+                                                      ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues, const TArray<FString>& NPCSettingLabels, const TArray<FString>& NPCSettingValues)
 {
 	// Create a FString to be written to the CSV file
 	FString CSVContent;
@@ -57,6 +57,12 @@ void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, c
 
 	// Add the experimenter configuration to the CSV file
 	AppendSettingConfig(CSVContent, ExperimenterSettingLabels, ExperimenterSettingValues);
+
+	// Add NPC Configuration
+	CSVContent += TEXT("\n");
+	CSVContent += TEXT("NPC Configuration\n");
+
+	AppendSettingConfig(CSVContent, NPCSettingLabels, NPCSettingValues);
 
 	WriteFile(FilePath, CSVContent);
 }
