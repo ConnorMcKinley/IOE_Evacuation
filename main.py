@@ -229,7 +229,7 @@ print("Generated number of nodes:", len(nodes))
 import json
 graph_data = {"nodes": [{"x": x, "y": y} for x, y in nodes], "connections": [{"nodeIndex1": i, "nodeIndex2": j} for i, j in connections]}
 with open('map.json', 'w') as f:
-    json.dump(graph_data, f)
+    json.dump(graph_data, f,indent=4)
 
 # Plot the graph
 import matplotlib.pyplot as plt
