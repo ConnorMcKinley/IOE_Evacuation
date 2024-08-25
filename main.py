@@ -233,10 +233,13 @@ with open('map.json', 'w') as f:
 
 # Plot the graph
 import matplotlib.pyplot as plt
+import numpy as ny
+
 for node in nodes:
     plt.plot(node[0], node[1], 'o')
 for connection in connections:
     node1 = nodes[connection[0]]
     node2 = nodes[connection[1]]
     plt.plot([node1[0], node2[0]], [node1[1], node2[1]], 'k-')
+
 plt.show()
