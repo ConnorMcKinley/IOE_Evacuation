@@ -1,54 +1,130 @@
 #include "UNPC_RouteManager.h"
 
-TMap<int32, int32> UNPC_RouteManager::NumberOfNPCsAtRouteMap;
-TMap<FRouteKey, int32> UNPC_RouteManager::MapConnectionToRouteID;
-TMap<int32, FRouteData> UNPC_RouteManager::MapRouteIDtoInstances;
-
 UNPC_RouteManager::UNPC_RouteManager()
 {
-    // Initialize default values here if necessary (NonStatic!)
+
 }
 
-bool UNPC_RouteManager::HasNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID)
+void UNPC_RouteManager::LogCurrentRouteIDs()
 {
-    return MapRouteIDtoInstances.Contains(RouteID);
+    UE_LOG(LogTemp, Log, TEXT("Logging All RouteIDs"));
+    // Log all RouteIDs in MapRouteIDtoInstances
+    for (const auto& Entry : MapRouteIDtoInstances)
+    {
+        UE_LOG(LogTemp, Log, TEXT("MapRouteIDtoInstances: Current RouteID: %d exists in MapRouteIDtoInstances"), Entry.Key);
+    }
+
+    // Log NPC data in NPCDataArray
+    for (const F_NPCData& Data : NPCDataArray)
+    {
+        // Convert boolean to string
+        FString SpawnedStatus = Data.bHasNPCsSpawned ? TEXT("Yes") : TEXT("No");
+        UE_LOG(LogTemp, Log, TEXT("NPCDataArray: Current RouteID: %d - Number of NPCs: %d. Spawned? %s"), Data.RouteID, Data.NumberOfNPCs, *SpawnedStatus);
+    }
 }
 
-void UNPC_RouteManager::AddNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID, FRouteData NPC_Data)
+void UNPC_RouteManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+    Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    DOREPLIFETIME(UNPC_RouteManager, NPCDataArray);
+    DOREPLIFETIME(UNPC_RouteManager, RouteConnectionArray);
+}
+
+void UNPC_RouteManager::ServerAddNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID, FRouteData NPC_Data)
+{
+    
     MapRouteIDtoInstances.Add(RouteID, NPC_Data);
+    UE_LOG(LogTemp, Log, TEXT("Added RouteID: %d to MapRouteIDtoInstances"), RouteID);
+    UpdateNPCDataArray(RouteID, true);
 }
 
-void UNPC_RouteManager::RemoveNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID)
+void UNPC_RouteManager::ServerRemoveNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID)
 {
+    UE_LOG(LogTemp, Log, TEXT("RemoveNPCSpawnedAtRoute called with RouteID: %d"), RouteID);
+
+    LogCurrentRouteIDs();
+
     // Check if the RouteID exists in the map
     if (FRouteData* RouteData = MapRouteIDtoInstances.Find(RouteID))
     {
+        UE_LOG(LogTemp, Log, TEXT("Deleting %d in the MapRouteIDtoInstances"), RouteID);
         // Destroy all BoxInstances
         for (ABP_BoundaryBox* BoxInstance : RouteData->BoxInstances)
         {
-            if (BoxInstance && BoxInstance->IsValidLowLevel())
+            if (BoxInstance)
             {
-                UE_LOG(LogTemp, Log, TEXT("Deleting BoxInstance: %s"), *BoxInstance->GetName());
-                BoxInstance->Destroy();
+                if (BoxInstance->IsValidLowLevel())
+                {
+                    UE_LOG(LogTemp, Log, TEXT("Deleting BoxInstance: %s"), *BoxInstance->GetName());
+                    BoxInstance->Destroy();
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("BoxInstance is not valid: %s"), *BoxInstance->GetName());
+                }
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("BoxInstance pointer is null."));
             }
         }
 
         // Destroy all NPCInstances
         for (ABP_NPC* NPCInstance : RouteData->NPCInstances)
         {
-            if (NPCInstance && NPCInstance->IsValidLowLevel())
+            if (NPCInstance)
             {
-                UE_LOG(LogTemp, Log, TEXT("Deleting NPCInstance: %s"), *NPCInstance->GetName());
-                NPCInstance->Destroy();
+                if (NPCInstance->IsValidLowLevel())
+                {
+                    UE_LOG(LogTemp, Log, TEXT("Deleting NPCInstance: %s"), *NPCInstance->GetName());
+                    NPCInstance->Destroy();
+                }
+                else
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("NPCInstance is not valid: %s"), *NPCInstance->GetName());
+                }
+            }
+            else
+            {
+                UE_LOG(LogTemp, Warning, TEXT("NPCInstance pointer is null."));
             }
         }
 
         // Remove the RouteID from the map
         MapRouteIDtoInstances.Remove(RouteID);
+        UpdateNPCDataArray(RouteID, false);
+
+    }
+    else
+    {
+        UE_LOG(LogTemp, Log, TEXT("RouteID: %d not found in the MapRouteIDtoInstances"), RouteID);
     }
 }
 
+/// <summary>
+/// Update the client's array on whether the RouteID has spawned in its NPCs or not
+/// </summary>
+/// <param name="RouteID"></param>
+/// <param name="bHasNPCSpawned"></param>
+void UNPC_RouteManager::UpdateNPCDataArray(int32 RouteID, bool bHasNPCSpawned)
+{
+
+    for (F_NPCData& Data : NPCDataArray)
+    {
+        if (Data.RouteID == RouteID)
+        {
+            Data.bHasNPCsSpawned = bHasNPCSpawned;
+            break;
+        }
+    }
+}
+
+/// <summary>
+/// Checks if NPC.json is a valid file.
+/// </summary>
+/// <param name="WorldContextObject"></param>
+/// <param name="Err"></param>
+/// <returns></returns>
 bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FString& Err)
 {
     FString FilePath = FPaths::ProjectDir() / TEXT("NPC.json");
@@ -78,7 +154,7 @@ bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FStri
         Err = "NPC.json does not contain a valid 'connections' object!";
         return false;
     }
-
+    TMap<FString, int32> map_connection_counter;
     // Validate the format and content of the 'connections' object
     for (const auto& Connection : (*ConnectionsObject)->Values)
     {
@@ -110,14 +186,35 @@ bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FStri
             Err = FString::Printf(TEXT("Invalid value type for connection key: %s"), *KeyString);
             return false;
         }
-    }
+        
+        int32 LowerNode = FMath::Min(NodeA, NodeB);
+        int32 HigherNode = FMath::Max(NodeA, NodeB);
+        FString NewKey = FString::FromInt(LowerNode) + '-' + FString::FromInt(HigherNode);
+        UE_LOG(LogTemp, Log, TEXT("Current Key is: %s"), *NewKey);
+        map_connection_counter.FindOrAdd(NewKey)++;
 
+        if (map_connection_counter[NewKey] > 1) {
+            Err = FString::Printf(TEXT("Multiple values exist for connection %i and %i"), LowerNode, HigherNode);
+            return false;
+        }
+    }
     return true;
+}
+
+UNPC_RouteManager* UNPC_RouteManager::CreateNPC_RouteManager(UObject* Outer)
+{
+    UNPC_RouteManager* NewRouteManager = NewObject<UNPC_RouteManager>(Outer);
+    return NewRouteManager;
 }
 
 bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 DefaultNPCValue, const TArray<FS_Map_Route> PermanentRoutes)
 {
+    // server DS
     MapConnectionToRouteID.Empty();
+
+    // local arrays start empty
+    NPCDataArray.Empty();
+    RouteConnectionArray.Empty();
     for (const FS_Map_Route& Route : PermanentRoutes)
     {
         NumberOfNPCsAtRouteMap.Add(Route.route_id, 0);
@@ -179,12 +276,25 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
                     {
                         *MapValue = NPCCount;
                         UE_LOG(LogTemp, Log, TEXT("Route: %d has %d NPCs"), *RouteID, NPCCount);
+
+                        // Fill the replicated NPC data array
+                        F_NPCData NPCData;
+                        NPCData.RouteID = *RouteID;
+                        NPCData.NumberOfNPCs = NPCCount;
+                        NPCData.bHasNPCsSpawned = false;
+                        NPCDataArray.Add(NPCData);
                     }
                     else
                     {
                         UE_LOG(LogTemp, Error, TEXT("Route ID not found for key: %s"), *KeyString);
                         return false;
                     }
+
+                    // Fill the replicated route connection array
+                    F_ReplicatedRouteConnection RouteConnection;
+                    RouteConnection.RouteKey = Key;
+                    RouteConnection.RouteID = *RouteID;
+                    RouteConnectionArray.Add(RouteConnection);
                 }
                 else
                 {
@@ -204,16 +314,26 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
         UE_LOG(LogTemp, Error, TEXT("Failed to find 'connections' array in JSON file: %s"), *FilePath);
         return false;
     }
-
+    LogCurrentRouteIDs();
     return true;
 }
 
-int32 UNPC_RouteManager::GetRouteNumNPCs(int32 route_id)
+bool UNPC_RouteManager::LocalHasNPCSpawnedAtRoute(int32 RouteID) const
 {
-    return NumberOfNPCsAtRouteMap.Contains(route_id) ? NumberOfNPCsAtRouteMap[route_id] : -1 ;
+    for (const F_NPCData& Data : NPCDataArray) {
+        if (Data.RouteID == RouteID) {
+            return Data.bHasNPCsSpawned;
+        }
+    }
+    return false;
 }
 
-void UNPC_RouteManager::ResetStaticMaps()
+int32 UNPC_RouteManager::LocalGetRouteNumNPCs(int32 RouteID) const
 {
-    MapRouteIDtoInstances.Empty();
+    for (const F_NPCData& Data : NPCDataArray) {
+        if (Data.RouteID == RouteID) {
+            return Data.NumberOfNPCs;
+        }
+    }
+    return -1;
 }

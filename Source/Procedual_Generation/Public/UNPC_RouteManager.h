@@ -7,8 +7,12 @@
 #include "HAL/PlatformFileManager.h"
 #include "UObject/NoExportTypes.h"
 #include "Misc/DefaultValueHelper.h"
-#include "FS_Map_Route.h"
+#include "Components/ActorComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "FRouteData.h"
+#include "FS_Map_Route.h"
+#include "F_NPCData.h"
+
 #include "UNPC_RouteManager.generated.h"
 
 
@@ -23,30 +27,53 @@ class PROCEDUAL_GENERATION_API UNPC_RouteManager : public UObject
 public:
     UNPC_RouteManager();
 
-    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
-    static bool HasNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID);
-
-    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
-    static void AddNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID, FRouteData NPC_Data);
-
-    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
-    static void RemoveNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID);
-
     UFUNCTION(BlueprintCallable, Category = "NPC File System", meta = (WorldContext = "WorldContextObject"))
-    static bool IsValidJsonFile(const UObject* WorldContextObject, FString& Err);
-
-    UFUNCTION(BlueprintCallable, Category = "NPC File System", meta = (WorldContext = "WorldContextObject"))
-    static bool ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 DefaultNPCValue, const TArray<FS_Map_Route> PermanentRoutes);
-
-    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
-    static int32 GetRouteNumNPCs(int32 route_id);
+    bool IsValidJsonFile(const UObject* WorldContextObject, FString& Err);
 
     UFUNCTION(BlueprintCallable, Category = "NPC Route Management")
-    static void ResetStaticMaps();
-    
+    static UNPC_RouteManager* CreateNPC_RouteManager(UObject* Outer);
+
+    UFUNCTION(BlueprintCallable, Category = "NPC File System", meta = (WorldContext = "WorldContextObject"))
+    bool ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 DefaultNPCValue, const TArray<FS_Map_Route> PermanentRoutes);
+
+    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
+    bool LocalHasNPCSpawnedAtRoute(int32 RouteID) const;
+
+    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
+    int32 LocalGetRouteNumNPCs(int32 RouteID) const;
+
+
+    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
+    void ServerAddNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID, FRouteData NPC_Data);
+
+    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
+    void ServerRemoveNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID);
+    void LogCurrentRouteIDs();
+protected:
+
+    /// <summary>
+    /// Record properties of object class that you want to replicate.
+    /// </summary>
+    /// <param name="OutLifetimeProps"></param>
+    virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+    /// <summary>
+    /// Informs the replication system that references to this object class are supported for replication
+    /// </summary>
+    /// <returns></returns>
+    virtual bool IsSupportedForNetworking() const override { return true; }
+
 private:
-    // Using a static map to hold route states; static to make it common across all instances.
-    static TMap<int32, int32> NumberOfNPCsAtRouteMap;
-    static TMap<FRouteKey, int32> MapConnectionToRouteID;
-    static TMap<int32, FRouteData> MapRouteIDtoInstances;
+    // Server-sided data
+    TMap<int32, int32> NumberOfNPCsAtRouteMap;
+    TMap<FRouteKey, int32> MapConnectionToRouteID;
+    TMap <int32, FRouteData> MapRouteIDtoInstances;
+
+    // Client-sided data
+    UPROPERTY(Replicated)
+    TArray<F_NPCData> NPCDataArray;
+
+    UPROPERTY(Replicated)
+    TArray<F_ReplicatedRouteConnection> RouteConnectionArray;
+
+    void UpdateNPCDataArray(int32 RouteID, bool bHasNPCSpawned);
 };
