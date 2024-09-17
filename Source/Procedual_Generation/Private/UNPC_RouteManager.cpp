@@ -119,56 +119,92 @@ void UNPC_RouteManager::UpdateNPCDataArray(int32 RouteID, bool bHasNPCSpawned)
     }
 }
 
-/// <summary>
-/// Checks if NPC.json is a valid file.
-/// </summary>
-/// <param name="WorldContextObject"></param>
-/// <param name="Err"></param>
-/// <returns></returns>
 bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FString& Err)
 {
-    FString FilePath = FPaths::ProjectDir() / TEXT("NPC.json");
-    if (!FPaths::FileExists(FilePath)) {
+    FString NPCFilePath = FPaths::ProjectDir() / TEXT("NPC.json");
+    if (!FPaths::FileExists(NPCFilePath)) {
         Err = "NPC.json Does Not Exist!";
         return false;
     }
 
-    FString FileContent;
-    if (!FFileHelper::LoadFileToString(FileContent, *FilePath)) {
+    FString NPCFileContent;
+    if (!FFileHelper::LoadFileToString(NPCFileContent, *NPCFilePath)) {
         Err = "Failed to read NPC.json!";
         return false;
     }
 
-    TSharedPtr<FJsonObject> JsonObject;
-    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(FileContent);
-
-    if (!FJsonSerializer::Deserialize(Reader, JsonObject) || !JsonObject.IsValid()) {
+    TSharedPtr<FJsonObject> NPCJsonObject;
+    TSharedRef<TJsonReader<>> NPCReader = TJsonReaderFactory<>::Create(NPCFileContent);
+    if (!FJsonSerializer::Deserialize(NPCReader, NPCJsonObject) || !NPCJsonObject.IsValid()) {
         Err = "Failed to parse NPC.json!";
         return false;
     }
 
-    // Check if 'connections' field exists and is a JSON object
-    const TSharedPtr<FJsonObject>* ConnectionsObject;
-    if (!JsonObject->TryGetObjectField(TEXT("connections"), ConnectionsObject))
+    // Load and parse map.json
+    FString MapFilePath = FPaths::ProjectDir() / TEXT("map.json");
+    if (!FPaths::FileExists(MapFilePath)) {
+        Err = "map.json Does Not Exist!";
+        return false;
+    }
+
+    FString MapFileContent;
+    if (!FFileHelper::LoadFileToString(MapFileContent, *MapFilePath)) {
+        Err = "Failed to read map.json!";
+        return false;
+    }
+
+    TSharedPtr<FJsonObject> MapJsonObject;
+    TSharedRef<TJsonReader<>> MapReader = TJsonReaderFactory<>::Create(MapFileContent);
+    if (!FJsonSerializer::Deserialize(MapReader, MapJsonObject) || !MapJsonObject.IsValid()) {
+        Err = "Failed to parse map.json!";
+        return false;
+    }
+
+    // Check if 'connections' field exists and is a JSON array in map.json
+    const TArray<TSharedPtr<FJsonValue>>* MapConnectionsArray;
+    if (!MapJsonObject->TryGetArrayField(TEXT("connections"), MapConnectionsArray))
+    {
+        Err = "map.json does not contain a valid 'connections' array!";
+        return false;
+    }
+
+    TSet<TPair<int32, int32>> ValidConnectionsSet;
+    for (const TSharedPtr<FJsonValue>& Value : *MapConnectionsArray)
+    {
+        if (Value->Type == EJson::Object)
+        {
+            int32 NodeIndex1, NodeIndex2;
+            if (Value->AsObject()->TryGetNumberField(TEXT("nodeIndex1"), NodeIndex1) &&
+                Value->AsObject()->TryGetNumberField(TEXT("nodeIndex2"), NodeIndex2))
+            {
+                int32 LowerNode = FMath::Min(NodeIndex1, NodeIndex2);
+                int32 HigherNode = FMath::Max(NodeIndex1, NodeIndex2);
+                ValidConnectionsSet.Add(TPair<int32, int32>(LowerNode, HigherNode));
+            }
+        }
+    }
+
+    // Check if 'connections' field exists and is a JSON object in NPC.json
+    const TSharedPtr<FJsonObject>* NPCConnectionsObject;
+    if (!NPCJsonObject->TryGetObjectField(TEXT("connections"), NPCConnectionsObject))
     {
         Err = "NPC.json does not contain a valid 'connections' object!";
         return false;
     }
-    TMap<FString, int32> map_connection_counter;
+
+    TMap<FString, int32> MapConnectionCounter;
     // Validate the format and content of the 'connections' object
-    for (const auto& Connection : (*ConnectionsObject)->Values)
+    for (const auto& Connection : (*NPCConnectionsObject)->Values)
     {
         FString KeyString = Connection.Key;
-        int32 HyphenIdx;
 
-        // Check if the key format is 'NodeA-NodeB'
+        int32 HyphenIdx;
         if (!KeyString.FindChar('-', HyphenIdx))
         {
             Err = FString::Printf(TEXT("Invalid connection key format: %s"), *KeyString);
             return false;
         }
 
-        // Ensure NodeA and NodeB are valid integers
         int32 NodeA, NodeB;
         bool bIsValidNodeA = FDefaultValueHelper::ParseInt(KeyString.Left(HyphenIdx), NodeA);
         bool bIsValidNodeB = FDefaultValueHelper::ParseInt(KeyString.Mid(HyphenIdx + 1), NodeB);
@@ -179,25 +215,33 @@ bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FStri
             return false;
         }
 
-        // Ensure the value is either a number (for NPC count) or null
         if (!(Connection.Value.IsValid() &&
             (Connection.Value->Type == EJson::Number || Connection.Value->Type == EJson::Null)))
         {
             Err = FString::Printf(TEXT("Invalid value type for connection key: %s"), *KeyString);
             return false;
         }
-        
+
         int32 LowerNode = FMath::Min(NodeA, NodeB);
         int32 HigherNode = FMath::Max(NodeA, NodeB);
         FString NewKey = FString::FromInt(LowerNode) + '-' + FString::FromInt(HigherNode);
         UE_LOG(LogTemp, Log, TEXT("Current Key is: %s"), *NewKey);
-        map_connection_counter.FindOrAdd(NewKey)++;
 
-        if (map_connection_counter[NewKey] > 1) {
-            Err = FString::Printf(TEXT("Multiple values exist for connection %i and %i"), LowerNode, HigherNode);
+        MapConnectionCounter.FindOrAdd(NewKey)++;
+
+        if (MapConnectionCounter[NewKey] > 1)
+        {
+            Err = FString::Printf(TEXT("Multiple entries exist for connection %i-%i"), NodeA, NodeB);
+            return false;
+        }
+
+        if (!ValidConnectionsSet.Contains(TPair<int32, int32>(LowerNode, HigherNode)))
+        {
+            Err = FString::Printf(TEXT("Connection %i-%i in NPC.json does not exist in map.json"), LowerNode, HigherNode);
             return false;
         }
     }
+
     return true;
 }
 
