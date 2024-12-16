@@ -28,13 +28,13 @@ public:
     UNPC_RouteManager();
 
     UFUNCTION(BlueprintCallable, Category = "NPC File System", meta = (WorldContext = "WorldContextObject"))
-    bool IsValidJsonFile(const UObject* WorldContextObject, FString& Err);
+    bool IsValidJsonFile(const UObject* WorldContextObject, FString& Err, const FString& Path, const FString& mapPath);
 
     UFUNCTION(BlueprintCallable, Category = "NPC Route Management")
     static UNPC_RouteManager* CreateNPC_RouteManager(UObject* Outer);
 
     UFUNCTION(BlueprintCallable, Category = "NPC File System", meta = (WorldContext = "WorldContextObject"))
-    bool ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 DefaultNPCValue, const TArray<FS_Map_Route> PermanentRoutes);
+    bool ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 DefaultNPCValue, const TArray<FS_Map_Route> PermanentRoutes, const FString& path);
 
     UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
     bool LocalHasNPCSpawnedAtRoute(int32 RouteID) const;
@@ -49,6 +49,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
     void ServerRemoveNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID);
     void LogCurrentRouteIDs();
+
+
+    UFUNCTION(BlueprintCallable, Category = "NPC Route Management", meta = (WorldContext = "WorldContextObject"))
+    float LocalGetWeightByNPCCount(int32 NPCCount);
 protected:
 
     /// <summary>
@@ -68,7 +72,12 @@ private:
     TMap<FRouteKey, int32> MapConnectionToRouteID;
     TMap <int32, FRouteData> MapRouteIDtoInstances;
 
+    bool CheckAndValidateNPCWeight(const TSharedPtr<FJsonObject>& NPCJsonObject, FString& Err);
+
     // Client-sided data
+    UPROPERTY(Replicated)
+    TArray<F_NPCWeightData> NPCWeightArray;
+
     UPROPERTY(Replicated)
     TArray<F_NPCData> NPCDataArray;
 

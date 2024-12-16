@@ -23,11 +23,27 @@ void UNPC_RouteManager::LogCurrentRouteIDs()
     }
 }
 
+float UNPC_RouteManager::LocalGetWeightByNPCCount(int32 NPCCount)
+{
+    UE_LOG(LogTemp, Log, TEXT("NPCWeight Array has a size of %d"), NPCWeightArray.Num());
+
+    for (const F_NPCWeightData& Data : NPCWeightArray)
+    {
+        UE_LOG(LogTemp, Log, TEXT("Searched %d and %f"), Data.NPCCount, Data.Weight);
+        if (Data.NPCCount == NPCCount)
+        {
+            return Data.Weight;
+        }
+    }
+    return 1.0f;
+}
+
 void UNPC_RouteManager::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
     Super::GetLifetimeReplicatedProps(OutLifetimeProps);
     DOREPLIFETIME(UNPC_RouteManager, NPCDataArray);
     DOREPLIFETIME(UNPC_RouteManager, RouteConnectionArray);
+    DOREPLIFETIME(UNPC_RouteManager, NPCWeightArray);
 }
 
 void UNPC_RouteManager::ServerAddNPCSpawnedAtRoute(const UObject* WorldContextObject, int32 RouteID, FRouteData NPC_Data)
@@ -119,9 +135,67 @@ void UNPC_RouteManager::UpdateNPCDataArray(int32 RouteID, bool bHasNPCSpawned)
     }
 }
 
-bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FString& Err)
+bool UNPC_RouteManager::CheckAndValidateNPCWeight(const TSharedPtr<FJsonObject>& NPCJsonObject, FString& Err) {
+    // If 'weights' field does not exist, no error
+    const TSharedPtr<FJsonObject>* NPCConnectionsObject;
+    if (!NPCJsonObject->TryGetObjectField(TEXT("weights"), NPCConnectionsObject)) {
+        return true;
+    }
+    UE_LOG(LogTemp, Log, TEXT("weights field exists in NPC.json. Initializing."));
+
+
+    TArray<TPair<int32, int32>> ExistingRanges;
+
+    // Validate the format and content of the 'weights' object
+    for (const auto& Connection : (*NPCConnectionsObject)->Values) {
+        FString KeyString = Connection.Key;
+
+        int32 HyphenIdx;
+        if (!KeyString.FindChar('-', HyphenIdx)) {
+            Err = FString::Printf(TEXT("Key '%s' does not contain a dash"), *KeyString);
+            return false;
+        }
+
+        int32 NodeA, NodeB;
+        bool bIsValidNodeA = FDefaultValueHelper::ParseInt(KeyString.Left(HyphenIdx), NodeA);
+        bool bIsValidNodeB = FDefaultValueHelper::ParseInt(KeyString.Mid(HyphenIdx + 1), NodeB);
+
+        if (!bIsValidNodeA || !bIsValidNodeB) {
+            Err = FString::Printf(TEXT("Key '%s' does not contain valid integers"), *KeyString);
+            return false;
+        }
+
+        if (NodeA >= NodeB) {
+            Err = FString::Printf(TEXT("Key '%s' does not have a smaller left number"), *KeyString);
+            return false;
+        }
+
+        if (!(Connection.Value.IsValid() && Connection.Value->Type == EJson::Number)) {
+            Err = FString::Printf(TEXT("Value for key '%s' is not a number"), *KeyString);
+            return false;
+        }
+
+        // Check for range intersection
+        TPair<int32, int32> NewRange(NodeA, NodeB);
+        for (const auto& ExistingRange : ExistingRanges) {
+            // intersection check
+            if ((NodeA >= ExistingRange.Key && NodeA < ExistingRange.Value) ||
+                (NodeB > ExistingRange.Key && NodeB <= ExistingRange.Value) ||
+                (NodeA <= ExistingRange.Key && NodeB >= ExistingRange.Value)) {
+                Err = FString::Printf(TEXT("Range '%s' intersects with an existing range"), *KeyString);
+                return false;
+            }
+        }
+
+        ExistingRanges.Add(NewRange);
+    }
+    return true;
+}
+
+bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FString& Err, const FString& Path, const FString& mapPath)
 {
-    FString NPCFilePath = FPaths::ProjectDir() / TEXT("NPC.json");
+    FString NPCFilePath = FPaths::ProjectDir() / Path;
+
     if (!FPaths::FileExists(NPCFilePath)) {
         Err = "NPC.json Does Not Exist!";
         return false;
@@ -141,7 +215,7 @@ bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FStri
     }
 
     // Load and parse map.json
-    FString MapFilePath = FPaths::ProjectDir() / TEXT("map.json");
+    FString MapFilePath = FPaths::ProjectDir() / mapPath;
     if (!FPaths::FileExists(MapFilePath)) {
         Err = "map.json Does Not Exist!";
         return false;
@@ -241,6 +315,11 @@ bool UNPC_RouteManager::IsValidJsonFile(const UObject* WorldContextObject, FStri
             return false;
         }
     }
+    
+
+    if (!CheckAndValidateNPCWeight(NPCJsonObject, Err)) {
+        return false;
+    }
 
     return true;
 }
@@ -251,7 +330,7 @@ UNPC_RouteManager* UNPC_RouteManager::CreateNPC_RouteManager(UObject* Outer)
     return NewRouteManager;
 }
 
-bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 DefaultNPCValue, const TArray<FS_Map_Route> PermanentRoutes)
+bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject, int32 DefaultNPCValue, const TArray<FS_Map_Route> PermanentRoutes, const FString& path)
 {
     // server DS
     MapConnectionToRouteID.Empty();
@@ -267,8 +346,8 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
         FRouteKey Key(NodeStart, NodeEnd);
         MapConnectionToRouteID.Add(Key, Route.route_id);
     }
+    FString FilePath = FPaths::ProjectDir() / path;
 
-    FString FilePath = FPaths::ProjectDir() / TEXT("NPC.json");
     FString JsonString;
     if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
     {
@@ -359,6 +438,37 @@ bool UNPC_RouteManager::ReadAndInitNPCNodeMap(const UObject* WorldContextObject,
         return false;
     }
     LogCurrentRouteIDs();
+
+
+    // Weights check on NPC.json
+    if (JsonObject->TryGetObjectField(TEXT("weights"), ConnectionsObject))
+    {
+        for (auto& Connection : (*ConnectionsObject)->Values)
+        {
+            FString KeyString = Connection.Key;
+            float Weight = Connection.Value->AsNumber();
+            int32 HyphenIdx;
+
+            if (KeyString.FindChar('-', HyphenIdx))
+            {
+                // Extract NodeA and NodeB from the string
+                int32 NodeA = FCString::Atoi(*KeyString.Left(HyphenIdx));
+                int32 NodeB = FCString::Atoi(*KeyString.Mid(HyphenIdx + 1));
+
+                // Add NPCWeight information [Inclusive, Exclusive) format
+                for (int i = NodeA; i < NodeB; i++)
+                {
+                    NPCWeightArray.Add(F_NPCWeightData(i, Weight));
+                }
+            }
+        }
+
+        for (const F_NPCWeightData& Data : NPCWeightArray)
+        {
+            UE_LOG(LogTemp, Log, TEXT("NPCWeight Data: NPCCount %d Weight %f"), Data.NPCCount, Data.Weight);
+        }
+    }
+
     return true;
 }
 

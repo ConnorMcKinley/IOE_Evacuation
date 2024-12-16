@@ -10,9 +10,13 @@ UENUM(BlueprintType)
 enum EReasonForSnapshot
 {
 	Initial,
-	WaypointReached,
+	NewWaypointReached,
+	ReturnedFromRoadblock,
+	Detour,
 	RoadblockReport,
-	Finished
+	Finished,
+	ServerOpen,
+	PlayerJoin
 };
 
 USTRUCT(BlueprintType)
@@ -21,7 +25,7 @@ struct FRouteSnapshotT
 	GENERATED_BODY()
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
-	FDateTime Time;
+	FDateTime Time; 
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	int CurrentWaypoint;
@@ -141,6 +145,9 @@ struct FTrustData
 
 	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category="Evacuation Data")
 	FDateTime TimeSent;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Evacuation Data")
+	TEnumAsByte<EReasonForSnapshot> Reason;
 };
 
 USTRUCT(BlueprintType)
@@ -232,7 +239,7 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	UFUNCTION(BlueprintCallable, Category = "CSV")
-	void WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
+	void WriteExperimentalSetupDetails(const FString& FilePath, const FString& LevelName, const TArray<FString>& PlayerNames,
 	                                   const TArray<FString>& GameSettingLabels, const TArray<FString>& GameSettingValues, const TArray<FString>&
 	                                   ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues, const TArray<FString>& NPCSettingLabels, const TArray<FString>& NPCSettingValues);
 	UFUNCTION(BlueprintCallable, Category = "CSV")
@@ -255,6 +262,7 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
+	static void AppendLevelName(FString& CSVContent, const FString& LevelName);
 	static void AppendParticipantIndices(FString& CSVContent, const TArray<FString>& PlayerNames);
 	static void AppendSettingConfig(FString& CSVContent, const TArray<FString>& SettingLabels, const TArray<FString>& SettingValues);
 	static FString ConvertToCSVFormat(const TArray<FString>& StringArray);

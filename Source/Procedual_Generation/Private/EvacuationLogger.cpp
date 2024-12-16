@@ -31,16 +31,19 @@ void UEvacuationLogger::TickComponent(float DeltaTime, ELevelTick TickType, FAct
 
 	// ...
 }
-void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, const TArray<FString>& PlayerNames,
+void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, const FString& LevelName, const TArray<FString>& PlayerNames,
                                                       const TArray<FString>& GameSettingLabels, const TArray<FString>& GameSettingValues, const TArray<FString>&
                                                       ExperimenterSettingLabels, const TArray<FString>& ExperimenterSettingValues, const TArray<FString>& NPCSettingLabels, const TArray<FString>& NPCSettingValues)
 {
 	// Create a FString to be written to the CSV file
 	FString CSVContent;
 
+	AppendLevelName(CSVContent, LevelName);
+
+	CSVContent += TEXT("\n");
+
 	AppendParticipantIndices(CSVContent, PlayerNames);
 
-	// Extra line to separate the two sections
 	CSVContent += TEXT("\n");
 
 	// Add game configuration title
@@ -49,7 +52,6 @@ void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, c
 	// Add the game configuration to the CSV file
 	AppendSettingConfig(CSVContent, GameSettingLabels, GameSettingValues);
 
-	// Extra line to separate the two sections
 	CSVContent += TEXT("\n");
 
 	// Add experimenter configuration title
@@ -69,9 +71,16 @@ void UEvacuationLogger::WriteExperimentalSetupDetails(const FString& FilePath, c
 TMap<int, FString> NavReasonToString = {
 	{0, "Initial"},
 	{1, "Waypoint Reached"},
-	{2, "Roadblock Report"},
-	{3, "Finished"}
+	{2, "Returned From Roadblock"},
+	{3, "Detour"},
+	{4, "Roadblock Report"},
+	{5, "Finished"},
+	{6, "Server Opened"},
+	{7, "Player Joined"}
 };
+
+
+
 void UEvacuationLogger::WriteNavigationHistory(const FString& FilePath, const TArray<FNavigationHistoryT>& NavigationData)
 {
 	FString CSVContent;
@@ -83,16 +92,24 @@ void UEvacuationLogger::WriteNavigationHistory(const FString& FilePath, const TA
 	{
 		for (const FRouteSnapshotT& Snapshot : NavHistory.RouteSnapshots)
 		{
-			// Format each row
-			FString Row = NavHistory.ParticipantIndex + TEXT(",");
-			Row += ParseDateTimeIntoHmsms(Snapshot.Time) + TEXT(",");
-			Row += NavReasonToString[Snapshot.Reason] + TEXT(",");
-			Row += FString::FromInt(Snapshot.CurrentWaypoint) + TEXT(",");
-            
-			// Convert UpdatedRoute array to string
-			for (int RoutePoint : Snapshot.UpdatedRoute)
-			{
-				Row += FString::FromInt(RoutePoint) + TEXT(" ");
+			FString Row;
+			if (Snapshot.Reason == ServerOpen || Snapshot.Reason == PlayerJoin ) { // Document Player Entering Game and Player Starts
+				FString Particpant = (Snapshot.Reason == ServerOpen) ? TEXT(" ") : NavHistory.ParticipantIndex;
+				Row = Particpant + TEXT(",");
+				Row += ParseDateTimeIntoHmsms(Snapshot.Time) + TEXT(",");
+				Row += NavReasonToString[Snapshot.Reason] + TEXT(",");
+			}
+			else { // default format
+				Row = NavHistory.ParticipantIndex + TEXT(",");
+				Row += ParseDateTimeIntoHmsms(Snapshot.Time) + TEXT(",");
+				Row += NavReasonToString[Snapshot.Reason] + TEXT(",");
+				Row += FString::FromInt(Snapshot.CurrentWaypoint) + TEXT(",");
+
+				// Convert UpdatedRoute array to string
+				for (int RoutePoint : Snapshot.UpdatedRoute)
+				{
+					Row += FString::FromInt(RoutePoint) + TEXT(" ");
+				}
 			}
 			
 			FString _ = Row.TrimEnd();
@@ -153,17 +170,19 @@ void UEvacuationLogger::WriteReportHistory(const FString& FilePath, const TArray
 	WriteFile(FilePath, CSVContent);
 }
 
+
 void UEvacuationLogger::WriteTrustHistory(const FString& FilePath, const TArray<FTrustData>& TrustData)
 {
 	FString CSVContent;
 
 	// Header
-	CSVContent += TEXT("Participant,Current Waypoint,Guide Score,Other Player Score,Overall Score,Time Appeared,Time Sent\n");
+	CSVContent += TEXT("Participant,Current Waypoint,Reason,Guide Score,Other Player Score,Overall Score,Time Appeared,Time Sent\n");
 
 	for (auto Trust : TrustData)
 	{
 		FString Row = Trust.ParticipantIndex + TEXT(",");
 		Row += FString::FromInt(Trust.CurrentWaypoint) + TEXT(",");
+		Row += NavReasonToString[Trust.Reason] + TEXT(",");
 		Row += FString::FromInt(Trust.ScoreGuide) + TEXT(",");
 		Row += FString::FromInt(Trust.ScoreOtherPlayer) + TEXT(",");
 		Row += FString::FromInt(Trust.ScoreOverall) + TEXT(",");
@@ -248,6 +267,12 @@ void UEvacuationLogger::WriteDecisionHistory(const FString& FilePath, const TArr
 
 	// Write the content to the file
 	WriteFile(FilePath, CSVContent);
+}
+
+void UEvacuationLogger::AppendLevelName(FString& CSVContent, const FString& LevelName)
+{
+	// Create a FString in the format of "Names, Players..." to be written to the CSV file
+	CSVContent += TEXT("Level: ") + LevelName + TEXT("\n");
 }
 
 

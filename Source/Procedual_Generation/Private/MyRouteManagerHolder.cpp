@@ -61,7 +61,7 @@ void AMyRouteManagerHolder::CleanupSubobject()
     if (NPC_RouteManager)
     {
         RemoveReplicatedSubObject(NPC_RouteManager);
-        NPC_RouteManager->MarkPendingKill(); // Mark the subobject for garbage collection
+        NPC_RouteManager->MarkAsGarbage(); // Mark the subobject for garbage collection
         NPC_RouteManager = nullptr;
     }
 }
