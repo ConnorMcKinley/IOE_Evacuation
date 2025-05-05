@@ -1,6 +1,9 @@
 # Visual Studio 2015 user specific files
 .vs/
 
+# Builds Folder
+October_Builds/*
+
 # Compiled Object files
 *.slo
 *.lo
